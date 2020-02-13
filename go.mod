@@ -11,12 +11,15 @@ require (
 	github.com/gin-gonic/contrib v0.0.0-20191209060500-d6e26eeaa607
 	github.com/gin-gonic/gin v1.5.0
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/godror/godror v0.11.3
 	github.com/gorilla/sessions v1.2.0 // indirect
+	github.com/jinzhu/gorm v1.9.12
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mattn/go-oci8 v0.0.4
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/goconvey v1.6.4 // indirect
-	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
 	golang.org/x/text v0.3.2
 )
