@@ -7,6 +7,7 @@ require (
 	github.com/Lofanmi/pinyin-golang v0.0.0-20180808030053-30cdbfc8c2de
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/Unknwon/goconfig v0.0.0-20191126170842-860a72fb44fd
+	github.com/astaxie/beego v1.12.1
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
 	github.com/boombuler/barcode v1.0.0
 	github.com/gin-gonic/contrib v0.0.0-20191209060500-d6e26eeaa607
@@ -23,7 +24,6 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/goconvey v1.6.4 // indirect
-	github.com/sqs/goreturns v0.0.0-20181028201513-538ac6014518 // indirect
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
 	golang.org/x/text v0.3.2
 )
