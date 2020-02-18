@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/davidddw2017/panzer/gostudy/demo06/07_showapi/showSdk/normalRequest"
 )
@@ -29,6 +30,7 @@ type Unit struct {
 }
 
 func main() {
+	currentTime := time.Now()
 	res := normalRequest.ShowapiRequest("http://route.showapi.com/1635-1", 146977, "5bd7e8474b2643978656b1872f637670")
 	res.AddTextPara("page", "141")
 	ret, _ := res.Post()
@@ -46,4 +48,7 @@ func main() {
 	} else {
 		fmt.Println("没有了")
 	}
+	endTime := time.Now()
+	during := endTime.Sub(currentTime)
+	fmt.Println(during)
 }
