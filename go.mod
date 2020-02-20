@@ -20,6 +20,7 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mattn/go-oci8 v0.0.4
+	github.com/mattn/go-runewidth v0.0.8
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
