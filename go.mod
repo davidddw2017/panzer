@@ -26,7 +26,7 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/goconvey v1.6.4 // indirect
-	github.com/valyala/fasthttp v1.9.0
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
 	golang.org/x/text v0.3.2
+	gopkg.in/ini.v1 v1.52.0
 )
