@@ -1,11 +1,13 @@
 package models
 
 import (
+	"fmt"
+
 	"github.com/davidddw2017/panzer/proj/ginMvc/drivers"
-	"github.com/jinzhu/gorm"
+	"github.com/go-xorm/xorm"
 )
 
-var db *gorm.DB = drivers.MysqlDb
+var db *xorm.Engine = drivers.MySQLDB
 
 type User struct {
 	Id      int    `json:"id" form:"id" primaryKey:"true"`
@@ -17,46 +19,38 @@ type User struct {
 // get one
 func (model *User) UserGet(id int) (user User, err error) {
 	// find one record
-	if err = db.Table("user").Where("id = ?", id).First(&user).Error; err != nil {
-		return
-	}
+	err = db.Table("user").Where("id = ?", id).Find(&user)
 	return
 }
 
-// get list
+// UserGetList get list
 func (model *User) UserGetList(page int, pageSize int) (users []User, err error) {
 	users = make([]User, 0)
 	offset := pageSize * (page - 1)
 	limit := pageSize
-
-	if err = db.Table("user").Find(&users).Limit(limit).Offset(offset).Error; err != nil {
-		return
-	}
+	fmt.Println("db= ", db)
+	err = db.Table("user").Limit(limit, offset).Find(&users)
+	fmt.Println(err)
+	fmt.Println(users)
 	return
 }
 
-// create
+// UserAdd create
 func (model *User) UserAdd() (id int64, err error) {
-	//result, err := db.Exec("INSERT INTO `users`(`name`, `age`) VALUES (?, ?)", model.Name, model.Age)
 	user := User{Name: model.Name, Age: model.Age, Address: model.Address}
-	if err = db.Table("user").Create(&user).Error; err != nil {
-		return
-	}
-	id = int64(user.Id)
+	id, err = db.Table("user").Insert(&user)
 	return
 }
 
-// update
+// UserUpdate update
 func (model *User) UserUpdate(id int) (afr int64, err error) {
 	user := User{Id: id, Name: model.Name, Age: model.Age, Address: model.Address}
-	executeAction := db.Table("user").Save(&user)
-	afr, err = executeAction.RowsAffected, executeAction.Error
+	afr, err = db.Table("user").Update(&user)
 	return
 }
 
-// delete
+// UserDelete delete
 func (model *User) UserDelete(id int) (afr int64, err error) {
-	executeAction := db.Table("user").Delete(&User{}, "id = ?", id)
-	afr, err = executeAction.RowsAffected, executeAction.Error
+	afr, err = db.Table("user").Delete(&User{Id: id})
 	return
 }

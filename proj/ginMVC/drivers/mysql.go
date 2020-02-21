@@ -6,17 +6,17 @@ import (
 
 	"github.com/davidddw2017/panzer/proj/ginMVC/configs"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jinzhu/gorm"
+	"github.com/go-xorm/xorm"
 )
 
 // query need rows.Close to release db ins
 // exec will release automatic
-var MysqlDb *gorm.DB // db pool instance
-var MysqlDbErr error // db err instance
+var MySQLDB *xorm.Engine // db pool instance
+var MySQLDBErr error     // db err instance
 
 func init() {
 	// get db config
-	dbConfig := configs.SystemConfig.DBConfig
+	dbConfig := configs.SystemConfig.MySQLConfig
 
 	dbDSN := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s",
 		dbConfig.User,
@@ -28,24 +28,25 @@ func init() {
 	)
 
 	// connect and open db connection
-	MysqlDb, MysqlDbErr = gorm.Open("mysql", dbDSN)
+	//MySQLDB, MySQLDBErr = gorm.Open("mysql", dbDSN)
+	MySQLDB, MySQLDBErr := xorm.NewEngine("mysql", dbDSN)
 
-	if MysqlDbErr != nil {
-		panic("database data source name error: " + MysqlDbErr.Error())
+	if MySQLDBErr != nil {
+		panic("database data source name error: " + MySQLDBErr.Error())
 	}
 
 	// max open connections
-	MysqlDb.DB().SetMaxOpenConns(dbConfig.MaxOpenConns)
+	MySQLDB.DB().SetMaxOpenConns(dbConfig.MaxOpenConns)
 
 	// max idle connections
-	MysqlDb.DB().SetMaxIdleConns(dbConfig.MaxIdleConns)
+	MySQLDB.DB().SetMaxIdleConns(dbConfig.MaxIdleConns)
 
 	// max lifetime of connection if <=0 will forever
-	MysqlDb.DB().SetConnMaxLifetime(time.Duration(dbConfig.MaxLifetimeConns))
+	MySQLDB.DB().SetConnMaxLifetime(time.Duration(dbConfig.MaxLifetimeConns))
 
 	// check db connection at once avoid connect failed
 	// else error will be reported until db first sql operate
-	if MysqlDbErr = MysqlDb.DB().Ping(); nil != MysqlDbErr {
-		panic("database connect failed: " + MysqlDbErr.Error())
+	if MySQLDBErr = MySQLDB.DB().Ping(); nil != MySQLDBErr {
+		panic("database connect failed: " + MySQLDBErr.Error())
 	}
 }

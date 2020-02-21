@@ -7,8 +7,9 @@ import (
 )
 
 type Config struct {
-	Server   `ini:"server"`
-	DBConfig `ini:"db"`
+	Server       `ini:"server"`
+	MySQLConfig  `ini:"mysql"`
+	SqliteConfig `ini:"sqlite"`
 }
 
 type Server struct {
@@ -19,7 +20,7 @@ type Server struct {
 	Env           string `ini:"env"`
 }
 
-type DBConfig struct {
+type MySQLConfig struct {
 	Host             string `ini:"host"`
 	Port             int    `ini:"port"`
 	Dbname           string `ini:"dbname"`
@@ -29,6 +30,10 @@ type DBConfig struct {
 	MaxOpenConns     int    `ini:"maxOpenConns"`
 	MaxIdleConns     int    `ini:"maxIdleConns"`
 	MaxLifetimeConns int    `ini:"maxLifetimeConns"`
+}
+
+type SqliteConfig struct {
+	Filename string `ini:"filename"`
 }
 
 // SystemConfig global config
