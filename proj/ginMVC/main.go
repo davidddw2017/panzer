@@ -9,8 +9,8 @@ import (
 var httpServer *gin.Engine
 
 func main() {
-	defer drivers.MySQLDB.Close()
 
+	defer drivers.MySQLDB.Close()
 	// 启动服务
 	server.Run(httpServer)
 }

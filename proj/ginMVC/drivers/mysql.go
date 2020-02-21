@@ -29,7 +29,7 @@ func init() {
 
 	// connect and open db connection
 	//MySQLDB, MySQLDBErr = gorm.Open("mysql", dbDSN)
-	MySQLDB, MySQLDBErr := xorm.NewEngine("mysql", dbDSN)
+	MySQLDB, MySQLDBErr = xorm.NewEngine("mysql", dbDSN)
 
 	if MySQLDBErr != nil {
 		panic("database data source name error: " + MySQLDBErr.Error())

@@ -127,8 +127,9 @@ button{background:none; border:none;}
       });
       $(document).on('click', '.btn-mod', function() {
         var item = $(this).parents('tr').children('td').eq(0).text();
+        console.log(item)
         if (item) {
-          ajaxGetRequest("users/" + item, null, function(data) {
+          ajaxJsonRequest("GET", "users/" + item, null, function(data) {
             $("#e_id").val(data.data.id);
             $("#e_name").val(data.data.name);
             $("#e_address").val(data.data.address);

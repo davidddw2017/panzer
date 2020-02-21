@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-
 	"github.com/davidddw2017/panzer/proj/ginMvc/drivers"
 	"github.com/go-xorm/xorm"
 )
@@ -19,7 +17,7 @@ type User struct {
 // get one
 func (model *User) UserGet(id int) (user User, err error) {
 	// find one record
-	err = db.Table("user").Where("id = ?", id).Find(&user)
+	_, err = db.Table("user").Where("id = ?", id).Get(&user)
 	return
 }
 
@@ -28,10 +26,7 @@ func (model *User) UserGetList(page int, pageSize int) (users []User, err error)
 	users = make([]User, 0)
 	offset := pageSize * (page - 1)
 	limit := pageSize
-	fmt.Println("db= ", db)
 	err = db.Table("user").Limit(limit, offset).Find(&users)
-	fmt.Println(err)
-	fmt.Println(users)
 	return
 }
 
@@ -44,8 +39,8 @@ func (model *User) UserAdd() (id int64, err error) {
 
 // UserUpdate update
 func (model *User) UserUpdate(id int) (afr int64, err error) {
-	user := User{Id: id, Name: model.Name, Age: model.Age, Address: model.Address}
-	afr, err = db.Table("user").Update(&user)
+	user := User{Name: model.Name, Age: model.Age, Address: model.Address}
+	afr, err = db.Table("user").Where("id = ? ", id).Update(&user)
 	return
 }
 
