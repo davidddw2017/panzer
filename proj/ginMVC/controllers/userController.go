@@ -6,138 +6,154 @@ import (
 
 	"github.com/davidddw2017/panzer/proj/ginMVC/models"
 	"github.com/gin-gonic/gin"
+	"github.com/go-xorm/xorm"
 )
 
 // get one
-func UserGet(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param("id"))
-	userModel := models.User{}
+func UserGet(db *xorm.Engine) func(c *gin.Context) {
+	return func(ctx *gin.Context) {
+		id, _ := strconv.Atoi(ctx.Param("id"))
+		userModel := models.User{}
 
-	data, err := userModel.UserGet(id)
+		data, err := userModel.UserGet(db, id)
 
-	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"msg": err.Error(),
+		if err != nil {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"data": data,
 		})
-		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"data": data,
-	})
 }
 
 // get list
-func UserGetList(ctx *gin.Context) {
-	page := ctx.DefaultQuery("page", "1")
-	pageSize := ctx.DefaultQuery("page_size", "10")
+func UserGetList(db *xorm.Engine) func(c *gin.Context) {
+	return func(ctx *gin.Context) {
 
-	pageInt, _ := strconv.Atoi(page)
-	pageSizeInt, _ := strconv.Atoi(pageSize)
+		page := ctx.DefaultQuery("page", "1")
+		pageSize := ctx.DefaultQuery("page_size", "10")
 
-	userModel := models.User{}
+		pageInt, _ := strconv.Atoi(page)
+		pageSizeInt, _ := strconv.Atoi(pageSize)
 
-	users, err := userModel.UserGetList(pageInt, pageSizeInt)
+		userModel := models.User{}
 
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"msg": err.Error(),
+		users, err := userModel.UserGetList(db, pageInt, pageSizeInt)
+
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"msg":  "success",
+			"data": users,
 		})
 	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"msg":  "success",
-		"data": users,
-	})
 }
 
 // add one
-func UserPost(ctx *gin.Context) {
+func UserPost(db *xorm.Engine) func(c *gin.Context) {
+	return func(ctx *gin.Context) {
 
-	name := ctx.PostForm("name")
-	address := ctx.PostForm("address")
-	age, _ := strconv.Atoi(ctx.PostForm("age"))
-	userModel := models.User{Name: name, Address: address, Age: age}
-	if err := ctx.ShouldBind(&userModel); nil != err {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"msg": err.Error(),
+		name := ctx.PostForm("name")
+		address := ctx.PostForm("address")
+		age, _ := strconv.Atoi(ctx.PostForm("ag"))
+		userModel := models.User{Name: name, Address: address, Age: age}
+		if err := ctx.ShouldBind(&userModel); nil != err {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		id, err := userModel.UserAdd(db)
+
+		if nil != err {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusCreated, gin.H{
+			"msg": "success",
+			"uid": id,
 		})
-		return
 	}
 
-	id, err := userModel.UserAdd()
-
-	if nil != err {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"msg": err.Error(),
-		})
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, gin.H{
-		"msg": "success",
-		"uid": id,
-	})
 }
 
 // update
-func UserPut(ctx *gin.Context) {
-	id := ctx.Param("id")
-	idInt, err := strconv.Atoi(id)
+func UserPut(db *xorm.Engine) func(c *gin.Context) {
+	return func(ctx *gin.Context) {
+		id := ctx.Param("id")
+		idInt, err := strconv.Atoi(id)
 
-	if nil != err || 0 == idInt {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"msg": "resource identifier not found",
-		})
-		return
+		if nil != err || 0 == idInt {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"msg": "resource identifier not found",
+			})
+			return
+		}
+
+		userModel := models.User{}
+
+		if err := ctx.ShouldBind(&userModel); nil != err {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		_, err = userModel.UserUpdate(db, idInt)
+
+		if nil != err {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		// 更新成功返回 204
+		ctx.JSON(http.StatusNoContent, gin.H{})
 	}
 
-	userModel := models.User{}
-
-	if err := ctx.ShouldBind(&userModel); nil != err {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"msg": err.Error(),
-		})
-		return
-	}
-
-	_, err = userModel.UserUpdate(idInt)
-
-	if nil != err {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"msg": err.Error(),
-		})
-		return
-	}
-
-	// 更新成功返回 204
-	ctx.JSON(http.StatusNoContent, gin.H{})
 }
 
 // delete
-func UserDelete(ctx *gin.Context) {
-	id := ctx.Param("id")
-	//id := ctx.PostForm("id")
-	idInt, err := strconv.Atoi(id)
+func UserDelete(db *xorm.Engine) func(c *gin.Context) {
+	return func(ctx *gin.Context) {
+		id := ctx.Param("id")
+		//id := ctx.PostForm("id")
+		idInt, err := strconv.Atoi(id)
 
-	if nil != err || 0 == idInt {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"msg": "resource identifier not found",
-		})
-		return
+		if nil != err || 0 == idInt {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"msg": "resource identifier not found",
+			})
+			return
+		}
+
+		userModel := models.User{}
+
+		_, err = userModel.UserDelete(db, idInt)
+
+		if nil != err {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		// 删除成功返回 204
+		ctx.JSON(http.StatusNoContent, gin.H{})
 	}
 
-	userModel := models.User{}
-
-	_, err = userModel.UserDelete(idInt)
-
-	if nil != err {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"msg": err.Error(),
-		})
-		return
-	}
-
-	// 删除成功返回 204
-	ctx.JSON(http.StatusNoContent, gin.H{})
 }

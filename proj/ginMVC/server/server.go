@@ -6,10 +6,11 @@ import (
 	"github.com/davidddw2017/panzer/proj/ginMVC/configs"
 	"github.com/davidddw2017/panzer/proj/ginMVC/routes"
 	"github.com/gin-gonic/gin"
+	"github.com/go-xorm/xorm"
 )
 
 // 配置并启动服务
-func Run(httpServer *gin.Engine) {
+func Run(httpServer *gin.Engine, db *xorm.Engine) {
 	// 服务配置
 	serverConfig := configs.SystemConfig.Server
 
@@ -28,13 +29,13 @@ func Run(httpServer *gin.Engine) {
 	}
 
 	// 注册路由
-	routes.RegisterRoutes(httpServer)
+	routes.RegisterRoutes(httpServer, db)
 
 	serverAddr := fmt.Sprintf("%s:%d", serverConfig.Host, serverConfig.Port)
 
 	// 启动服务
 	err := httpServer.Run(serverAddr)
 	if nil != err {
-		panic("server run error: " + err.Error())
+		panic("server n error: " + err.Error())
 	}
 }

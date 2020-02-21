@@ -11,10 +11,8 @@ import (
 
 // query need rows.Close to release db ins
 // exec will release automatic
-var MySQLDB *xorm.Engine // db pool instance
-var MySQLDBErr error     // db err instance
 
-func init() {
+func InitMySQL() (MySQLDB *xorm.Engine, MySQLDBErr error) {
 	// get db config
 	dbConfig := configs.SystemConfig.MySQLConfig
 
@@ -28,8 +26,8 @@ func init() {
 	)
 
 	// connect and open db connection
-	//MySQLDB, MySQLDBErr = gorm.Open("mysql", dbDSN)
 	MySQLDB, MySQLDBErr = xorm.NewEngine("mysql", dbDSN)
+	MySQLDB.ShowSQL(true)
 
 	if MySQLDBErr != nil {
 		panic("database data source name error: " + MySQLDBErr.Error())
@@ -49,4 +47,5 @@ func init() {
 	if MySQLDBErr = MySQLDB.DB().Ping(); nil != MySQLDBErr {
 		panic("database connect failed: " + MySQLDBErr.Error())
 	}
+	return
 }
