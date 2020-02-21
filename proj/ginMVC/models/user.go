@@ -1,11 +1,11 @@
-package model
+package models
 
 import (
-	"github.com/davidddw2017/panzer/proj/ginMvc/driver"
+	"github.com/davidddw2017/panzer/proj/ginMvc/drivers"
 	"github.com/jinzhu/gorm"
 )
 
-var db *gorm.DB = driver.MysqlDb
+var db *gorm.DB = drivers.MysqlDb
 
 type User struct {
 	Id      int    `json:"id" form:"id" primaryKey:"true"`

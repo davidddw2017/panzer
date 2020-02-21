@@ -1,13 +1,12 @@
-package driver
+package drivers
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/davidddw2017/panzer/proj/ginMVC/configs"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
-
-	"github.com/davidddw2017/panzer/proj/ginMvc/config"
 )
 
 // query need rows.Close to release db ins
@@ -17,7 +16,7 @@ var MysqlDbErr error // db err instance
 
 func init() {
 	// get db config
-	dbConfig := config.SystemConfig.DBConfig
+	dbConfig := configs.SystemConfig.DBConfig
 
 	dbDSN := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s",
 		dbConfig.User,

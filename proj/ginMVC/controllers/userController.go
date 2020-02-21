@@ -1,17 +1,17 @@
-package controller
+package controllers
 
 import (
 	"net/http"
 	"strconv"
 
-	"github.com/davidddw2017/panzer/proj/ginMvc/model"
+	"github.com/davidddw2017/panzer/proj/ginMVC/models"
 	"github.com/gin-gonic/gin"
 )
 
 // get one
 func UserGet(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
-	userModel := model.User{}
+	userModel := models.User{}
 
 	data, err := userModel.UserGet(id)
 
@@ -35,7 +35,7 @@ func UserGetList(ctx *gin.Context) {
 	pageInt, _ := strconv.Atoi(page)
 	pageSizeInt, _ := strconv.Atoi(pageSize)
 
-	userModel := model.User{}
+	userModel := models.User{}
 
 	users, err := userModel.UserGetList(pageInt, pageSizeInt)
 
@@ -57,7 +57,7 @@ func UserPost(ctx *gin.Context) {
 	name := ctx.PostForm("name")
 	address := ctx.PostForm("address")
 	age, _ := strconv.Atoi(ctx.PostForm("age"))
-	userModel := model.User{Name: name, Address: address, Age: age}
+	userModel := models.User{Name: name, Address: address, Age: age}
 	if err := ctx.ShouldBind(&userModel); nil != err {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"msg": err.Error(),
@@ -92,7 +92,7 @@ func UserPut(ctx *gin.Context) {
 		return
 	}
 
-	userModel := model.User{}
+	userModel := models.User{}
 
 	if err := ctx.ShouldBind(&userModel); nil != err {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -127,7 +127,7 @@ func UserDelete(ctx *gin.Context) {
 		return
 	}
 
-	userModel := model.User{}
+	userModel := models.User{}
 
 	_, err = userModel.UserDelete(idInt)
 
