@@ -11,6 +11,7 @@ require (
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
 	github.com/boombuler/barcode v1.0.0
 	github.com/davidddw/gopj v0.0.0-20200218034741-0efccbdc84d7
+	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/gin-gonic/contrib v0.0.0-20191209060500-d6e26eeaa607
 	github.com/gin-gonic/gin v1.5.0
 	github.com/go-sql-driver/mysql v1.5.0
