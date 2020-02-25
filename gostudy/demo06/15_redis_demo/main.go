@@ -2,40 +2,35 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
-	"io/ioutil"
-	"net/url"
-	"os"
-	"path/filepath"
-	"regexp"
+	"net/http"
 	"sort"
 	"strconv"
-	"strings"
-	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 )
 
-type News struct {
-	ID    int64
-	Title string
-	Link  url.URL
-	Ctime time.Time
-}
-
-var wg sync.WaitGroup
-
 const (
-	Dir         = "D:\\news"
+	// Dir file path
+	Dir = "D:\\news"
+	// CachePrefix file path
 	CachePrefix = "gonews"
-	Host        = "192.168.1.61:6379"
-	CacheDB     = 2
+	// SortedPrefix sort path
+	SortedPrefix = "gonews_sort"
+	// Host redis host
+	Host = "192.168.1.190:6379"
+	// CacheDB redis db
+	CacheDB = 2
 )
 
 var client *redis.Client
+var act string
 
 func init() {
+	flag.StringVar(&act, "a", "cache", "the action to run service, values 'api' or 'cache'")
 	if client == nil {
 		client = newClient()
 	}
@@ -51,24 +46,84 @@ func newClient() *redis.Client {
 }
 
 func main() {
-	//loadData()
-	getData()
+	flag.Parse()
+	if act == "api" {
+		StartServ()
+	} else {
+		InitDataPuller(Dir)
+	}
 }
 
-func getData() {
-	pageNum, pageSize := int64(1), int64(5)
-	news, count := getAllNews(pageNum, pageSize)
+// StartServ start server at 8080
+func StartServ() {
+	r := gin.Default()
+	r.GET("/news", func(c *gin.Context) {
+		page := c.DefaultQuery("page", "1")
+		pageNum, _ := strconv.ParseInt(page, 10, 64)
+		size := c.DefaultQuery("size", "10")
+		pageSize, _ := strconv.ParseInt(size, 10, 64)
+		news, count, err := getPagedNews(pageNum, pageSize)
+
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"total":    count,
+			"pagesize": pageSize,
+			"items":    news,
+		})
+	})
+	r.Run(":8080")
+}
+
+func getData(pageNum, pageSize int64) []byte {
+	news, count, _ := getPagedNews(pageNum, pageSize)
 	data := map[string]interface{}{
 		"total":    count,
 		"pagesize": pageSize,
 		"items":    news,
 	}
 	jData, _ := json.Marshal(data)
-	fmt.Println(string(jData))
+	return jData
+}
+
+// 获取新闻
+func getPagedNews(pageNum int64, pageSize int64) ([]map[string]string, int64, error) {
+	start := time.Now()
+	offset := (pageNum - 1) * pageSize
+	sortedKey, err := client.Sort(SortedPrefix, &redis.Sort{Offset: offset, Count: pageSize, Order: "desc"}).Result()
+	if err != nil {
+		return nil, 0, err
+	}
+	count, err := client.SCard(SortedPrefix).Result()
+	if err != nil {
+		return nil, 0, err
+	}
+	var newsList []map[string]string
+	for i := 0; i < len(sortedKey); i++ {
+		length := len(sortedKey[i])
+		if length != 0 {
+			sByte := []byte(sortedKey[i])
+			key1 := string(sByte[:8])
+			id := string(sByte[length-3:])
+			news, err := getNewsCache(CachePrefix + ":" + key1 + ":" + id)
+			if err != nil {
+				continue
+			}
+			newsList = append(newsList, news)
+		}
+	}
+	end := time.Now()
+	fmt.Printf("cost %v\n", end.Sub(start))
+	return newsList, count, nil
 }
 
 // 获取全部新闻
 func getAllNews(pageNum int64, pageSize int64) ([]map[string]string, int64) {
+	start := time.Now()
 	key0 := CachePrefix
 	keys1, _ := client.SMembers(key0).Result()
 	newsList := map[string]map[string]string{}
@@ -93,6 +148,8 @@ func getAllNews(pageNum int64, pageSize int64) ([]map[string]string, int64) {
 		}
 		i++
 	}
+	end := time.Now()
+	fmt.Printf("cost %v\n", end.Sub(start))
 	return pageNews, i
 }
 
@@ -113,113 +170,4 @@ func sortNews(raw map[string]map[string]string) []map[string]string {
 // 获取新闻缓存
 func getNewsCache(key string) (map[string]string, error) {
 	return client.HGetAll(key).Result()
-}
-
-func loadData() {
-	files := getFileList(Dir)
-	for _, file := range files {
-		wg.Add(1)
-		go cacheNews(file)
-	}
-	wg.Wait()
-}
-
-// 并发缓存数据
-func cacheNews(path string) {
-	defer wg.Done()
-	newsList, _ := getNews(path)
-	for _, item := range newsList {
-		cache := map[string]interface{}{
-			"id":    strconv.Itoa(int(item.ID)),
-			"title": item.Title,
-			"link":  item.Link.String(),
-			"ctime": item.Ctime.Format("20060102"),
-		}
-		setNewsCache(cache) // 缓存数据
-	}
-}
-
-func setNewsCache(cache map[string]interface{}) error {
-	key0 := CachePrefix
-	var key1, key2 string
-	if value, ok := cache["ctime"].(string); ok {
-		key1 = key0 + ":" + value
-		err := client.SAdd(key0, value).Err()
-		if err != nil {
-			return err
-		}
-	}
-	if value, ok := cache["title"].(string); ok {
-		key2 = key1 + ":" + value
-		err := client.SAdd(key1, value).Err()
-		if err != nil {
-			return err
-		}
-		return client.HMSet(key2, cache).Err()
-	}
-	return nil
-}
-
-func getNews(path string) (newsList []News, err error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return
-	}
-	defer file.Close()
-
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		return
-	}
-	reg := regexp.MustCompile(`(?i)#{0,3}\s*GoCN每日新闻\(([\d-]*)\)\n+\D*((.*\n)+?\n)`)
-	allMatch := reg.FindAllSubmatch(data, -1)
-	for _, item := range allMatch {
-		loc, _ := time.LoadLocation("Local")
-		ctime, err := time.ParseInLocation("2006-01-02", string(item[1]), loc)
-		if err != nil {
-			continue
-		}
-		subReg := regexp.MustCompile(`(\d)\.\s*(.*)\s+(http.*)\n?`)
-		subAll := subReg.FindAllSubmatch(item[2], -1)
-		for _, subItem := range subAll {
-			id, err := strconv.ParseInt(string(subItem[1]), 10, 64)
-			if err != nil {
-				continue
-			}
-			title := strings.TrimSpace(string(subItem[2]))
-			sUrl, err := url.Parse(string(subItem[3]))
-			if err != nil {
-				continue
-			}
-			singleNews := News{id, title, *sUrl, ctime}
-			newsList = append(newsList, singleNews)
-		}
-	}
-	return
-}
-
-func getFileList(dir string) []string {
-	files := []string{}
-	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
-		if f == nil {
-			return err
-		}
-		if strings.Contains(path, ".git") {
-			return nil
-		}
-		if f.IsDir() {
-			return nil
-		}
-		baseName := filepath.Base(path)
-		if !strings.Contains(baseName, "-") {
-			return nil
-		}
-		ext := filepath.Ext(path)
-		if ext != ".md" {
-			return nil
-		}
-		files = append(files, path)
-		return nil
-	})
-	return files
 }
