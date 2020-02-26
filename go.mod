@@ -1,6 +1,6 @@
 module github.com/davidddw2017/panzer
 
-go 1.13
+go 1.14
 
 require (
 	github.com/360EntSecGroup-Skylar/excelize/v2 v2.1.0
@@ -10,7 +10,8 @@ require (
 	github.com/astaxie/beego v1.12.1
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
 	github.com/boombuler/barcode v1.0.0
-	github.com/davidddw/gopj v0.0.0-20200218034741-0efccbdc84d7
+	github.com/davidddw/golib v0.0.0-20200226035322-215efa3b9d4f
+	github.com/davidddw/gopj v0.0.0-20200226031843-c152b84bb222
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/gin-gonic/contrib v0.0.0-20191209060500-d6e26eeaa607
 	github.com/gin-gonic/gin v1.5.0
@@ -21,6 +22,7 @@ require (
 	github.com/golang/protobuf v1.3.3
 	github.com/gorilla/sessions v1.2.0 // indirect
 	github.com/jinzhu/gorm v1.9.12
+	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mattn/go-oci8 v0.0.4
 	github.com/mattn/go-runewidth v0.0.8

@@ -1,29 +1,100 @@
-// 解析数据
 package main
 
 import (
-	"crypto/md5"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/davidddw/golib/logger"
 )
 
-// 单条新闻数据结构
-type news struct {
+// News news structure
+type News struct {
 	ID    int64
 	Title string
 	Link  url.URL
 	Ctime time.Time
 }
 
-// 遍历文件夹
+var wg sync.WaitGroup
+
+// InitDataPuller load data from file and save into redis
+func InitDataPuller(dir string) {
+	cmd := exec.Command("git", "pull", "origin", "master")
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	logger.Infof("%s", string(out))
+
+	if err != nil {
+		logger.Errorf("%s", "Pull failed")
+		logger.Errorf("%s", err)
+		logger.Errorf("%s", out)
+	} else {
+		if !strings.Contains(string(out), "Already up to date") {
+			logger.Infof("%s", "Pull success")
+
+			// 缓存数据操作
+			files := getFileList(dir)
+			for _, file := range files {
+				wg.Add(1)
+				go cacheNews(file)
+			}
+			wg.Wait()
+			logger.Infof("%s", "Success to cache news")
+		}
+	}
+}
+
+func cacheNews(path string) {
+	defer wg.Done()
+	newsList, _ := parseNews(path)
+	for _, item := range newsList {
+		cache := map[string]interface{}{
+			"id":    item.ID,
+			"title": item.Title,
+			"link":  item.Link.String(),
+			"ctime": item.Ctime.Format("20060102"),
+		}
+		setNewsToCache(cache) // 缓存数据
+	}
+}
+
+func setNewsToCache(cache map[string]interface{}) error {
+	rootKey := CachePrefix
+	sortedKey := SortedPrefix
+	var key1, key2 string
+	if value, ok := cache["ctime"].(string); ok {
+		err := client.SAdd(rootKey, value).Err()
+		if err != nil {
+			return err
+		}
+		key1 = value
+	}
+	if value, ok := cache["id"].(int64); ok {
+		key2 = fmt.Sprintf("%03d", value)
+		err := client.SAdd(sortedKey, key1+key2).Err()
+		if err != nil {
+			return err
+		}
+		key1 := rootKey + ":" + key1
+		err = client.SAdd(key1, key2).Err()
+		if err != nil {
+			return err
+		}
+		key2 = key1 + ":" + key2
+		return client.HMSet(key2, cache).Err()
+	}
+	return nil
+}
+
 func getFileList(dir string) []string {
 	files := []string{}
 	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
@@ -50,57 +121,40 @@ func getFileList(dir string) []string {
 	return files
 }
 
-// 计算文件哈希
-func getFileHash(path string) string {
+func parseNews(path string) (newsList []News, err error) {
 	file, err := os.Open(path)
+	if err != nil {
+		return
+	}
 	defer file.Close()
-	if err != nil {
-		return ""
-	}
-	h := md5.New()
-	_, err = io.Copy(h, file)
-	if err != nil {
-		return ""
-	}
-	return fmt.Sprintf("%x", h.Sum(nil))
-}
 
-// 获取新闻
-func getNews(path string) []news {
-	file, err := os.Open(path)
-	defer file.Close()
-	if err != nil {
-		return nil
-	}
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
-		return nil
+		return
 	}
-	newsList := []news{}
 	reg := regexp.MustCompile(`(?i)#{0,3}\s*GoCN每日新闻\(([\d-]*)\)\n+\D*((.*\n)+?\n)`)
-	all := reg.FindAllSubmatch(data, -1)
-	for _, item := range all {
-		singleNews := news{}
+	allMatch := reg.FindAllSubmatch(data, -1)
+	for _, item := range allMatch {
 		loc, _ := time.LoadLocation("Local")
 		ctime, err := time.ParseInLocation("2006-01-02", string(item[1]), loc)
-		if err == nil {
-			singleNews.Ctime = ctime
+		if err != nil {
+			continue
 		}
-		sreg := regexp.MustCompile(`(\d)\.\s*(.*)\s+(http.*)\n?`)
-		sall := sreg.FindAllSubmatch(item[2], -1)
-		for _, sitem := range sall {
-			id, err := strconv.Atoi(string(sitem[1]))
-			if err == nil {
-				singleNews.ID = int64(id)
+		subReg := regexp.MustCompile(`(\d)\.\s*(.*)\s*(http.*)\n?`)
+		subAll := subReg.FindAllSubmatch(item[2], -1)
+		for _, subItem := range subAll {
+			id, err := strconv.ParseInt(string(subItem[1]), 10, 64)
+			if err != nil {
+				continue
 			}
-			singleNews.Title = strings.TrimSpace(string(sitem[2]))
-			surl, err := url.Parse(string(sitem[3]))
-			if err == nil {
-				singleNews.Link = *surl
+			title := strings.TrimSpace(string(subItem[2]))
+			sURL, err := url.Parse(strings.TrimSpace(string(subItem[3])))
+			if err != nil {
+				continue
 			}
+			singleNews := News{id, title, *sURL, ctime}
 			newsList = append(newsList, singleNews)
 		}
 	}
-
-	return newsList
+	return
 }
