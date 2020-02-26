@@ -34,5 +34,6 @@ require (
 	github.com/tidwall/gjson v1.5.0
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
 	golang.org/x/text v0.3.2
+	golang.org/x/tools v0.0.0-20200225230052-807dcd883420 // indirect
 	gopkg.in/ini.v1 v1.52.0
 )
